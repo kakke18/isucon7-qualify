@@ -38,8 +38,8 @@ const pool = mysql.createPool({
   connectionLimit: 20,
   host: process.env.ISUBATA_DB_HOST || 'localhost',
   port: process.env.ISUBATA_DB_PORT || '3306',
-  user: process.env.ISUBATA_DB_USER || 'root',
-  password: process.env.ISUBATA_DB_PASSWORD || '',
+  user: process.env.ISUBATA_DB_USER || 'isucon',
+  password: process.env.ISUBATA_DB_PASSWORD || 'isucon',
   database: 'isubata',
   charset: 'utf8mb4',
 })
