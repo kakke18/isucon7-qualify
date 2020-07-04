@@ -409,25 +409,28 @@ func queryChannels() ([]int64, error) {
 	return res, err
 }
 
-func queryHaveRead(userID, chID int64) (int64, error) {
-	type HaveRead struct {
-		UserID    int64     `db:"user_id"`
-		ChannelID int64     `db:"channel_id"`
-		MessageID int64     `db:"message_id"`
-		UpdatedAt time.Time `db:"updated_at"`
-		CreatedAt time.Time `db:"created_at"`
-	}
-	h := HaveRead{}
+type HaveRead struct {
+	UserID    int64     `db:"user_id"`
+	ChannelID int64     `db:"channel_id"`
+	MessageID int64     `db:"message_id"`
+	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `db:"created_at"`
+}
 
-	err := db.Get(&h, "SELECT * FROM haveread WHERE user_id = ? AND channel_id = ?",
-		userID, chID)
-
+func queryHaveRead(userID int64) (map[int64]int64, error) {
+	haveReadMap := make(map[int64]int64)
+	haveReads := []HaveRead{}
+	err := db.Select(&haveReads, "SELECT * FROM haveread WHERE user_id = ?", userID)
 	if err == sql.ErrNoRows {
-		return 0, nil
+		return haveReadMap, nil
 	} else if err != nil {
-		return 0, err
+		return haveReadMap, err
 	}
-	return h.MessageID, nil
+
+	for _, h := range haveReads {
+		haveReadMap[h.ChannelID] = h.MessageID
+	}
+	return haveReadMap, err
 }
 
 func fetchUnread(c echo.Context) error {
@@ -445,25 +448,24 @@ func fetchUnread(c echo.Context) error {
 
 	resp := []map[string]interface{}{}
 
+	haveReadMap, err := queryHaveRead(userID)
+	if err != nil {
+		fmt.Printf("queryHaveRead: %s", err.Error())
+		return err
+	}
+
 	for _, chID := range channels {
-		lastID, err := queryHaveRead(userID, chID)
+		var cnt int64
+		if v, ok := haveReadMap[chID]; ok {
+			err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id", chID, v)
+		} else {
+			err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
+		}
 		if err != nil {
+			fmt.Printf("Get haveread: %s", err.Error())
 			return err
 		}
 
-		var cnt int64
-		if lastID > 0 {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-				chID, lastID)
-		} else {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
-				chID)
-		}
-		if err != nil {
-			return err
-		}
 		r := map[string]interface{}{
 			"channel_id": chID,
 			"unread":     cnt}
