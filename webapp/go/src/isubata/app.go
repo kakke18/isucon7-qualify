@@ -658,8 +658,14 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
-		if err != nil {
+		// 以下をコメントアウト（DBに画像バイナリ追加処理）
+		//_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		//if err != nil {
+		//	return err
+		//}
+		// 以下を追記（ファイル書き込み処理）
+		if err := ioutil.WriteFile("/home/isucon/isubata/webapp/public/icons/"+avatarName, avatarData, 0644); err != nil {
+			fmt.Printf("postProfile: %s\n", err.Error())
 			return err
 		}
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
@@ -754,3 +760,4 @@ func main() {
 
 	e.Start(":5000")
 }
+
