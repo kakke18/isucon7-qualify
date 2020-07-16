@@ -1,2 +1,3 @@
 app
 go.sum
+webapp/go/src/isubata/log/*.log

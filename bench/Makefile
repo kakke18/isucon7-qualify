@@ -1,3 +1,6 @@
+run:
+	./bin/bench -remotes=127.0.0.1 -output results/result_`date +"%Y%m%d_%H%M%S"`.json
+
 all: build
 
 .PHONY: build

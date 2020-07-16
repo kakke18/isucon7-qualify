@@ -8,3 +8,5 @@ bench/isucon7q-initial-dataset.sql.gz
 bench/result.json
 webapp/perl/local
 .go-version
+bench/results/result_*.json
+isucon7-qualify.iml
