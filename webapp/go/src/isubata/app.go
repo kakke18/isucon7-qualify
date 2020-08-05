@@ -455,15 +455,18 @@ func fetchUnread(c echo.Context) error {
 	}
 
 	for _, chID := range channels {
-		var cnt int64
+		cnt := 0
+		var messages []Message
+		err = db.Get(&messages, "SELECT * FROM message")
+
 		if v, ok := haveReadMap[chID]; ok {
-			err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id", chID, v)
+			for _, m := range messages {
+				if m.ChannelID == chID && m.ID > v { cnt++ }
+			}
 		} else {
-			err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
-		}
-		if err != nil {
-			fmt.Printf("Get haveread: %s", err.Error())
-			return err
+			for _, m := range messages {
+				if m.ChannelID == chID { cnt++ }
+			}
 		}
 
 		r := map[string]interface{}{
