@@ -455,16 +455,32 @@ func fetchUnread(c echo.Context) error {
 		return err
 	}
 
+	messages := []Message{}
+	err = db.Select(&messages, "SELECT * FROM message")
+	if err != nil {
+		fmt.Printf("getMessages: %s", err.Error())
+		return err
+	}
+
+	messageMap := make(map[int64]Message)
+	for _, m := range messages {
+		messageMap[m.ChannelID] = m
+	}
+
 	for _, chID := range channels {
-		var cnt int64
-		if v, ok := haveReadMap[chID]; ok {
-			err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id", chID, v)
+		cnt := 0
+		if id, ok1 := haveReadMap[chID]; ok1 {
+			if m, ok2 := messageMap[chID]; ok2 {
+				if m.ID > id {
+					cnt++
+				}
+			}
 		} else {
-			err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
-		}
-		if err != nil {
-			fmt.Printf("Get haveread: %s", err.Error())
-			return err
+			for _, m := range messages {
+				if m.ChannelID == chID {
+					cnt++
+				}
+			}
 		}
 
 		r := map[string]interface{}{
@@ -766,4 +782,3 @@ func main() {
 
 	e.Start(":5000")
 }
-
