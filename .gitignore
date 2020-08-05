@@ -9,4 +9,6 @@ bench/result.json
 webapp/perl/local
 .go-version
 bench/results/result_*.json
+webapp/go/src/isubata/log/
 isucon7-qualify.iml
+webapp/public/icons
